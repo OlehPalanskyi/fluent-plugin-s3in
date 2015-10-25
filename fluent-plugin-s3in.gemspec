@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Takeshi Shiihara']
   spec.email         = ['shi-take@dummy.dummy']
 
-  spec.summary       = %q{TODO: Write a short summary, because Rubygems requires one.}
-  spec.description   = %q{TODO: Write a longer description or delete this line.}
+  spec.summary       = %q{Write a short summary, because Rubygems requires one.}
+  spec.description   = %q{Write a longer description or delete this line.}
   spec.homepage      = 'http://'
   spec.license       = 'MIT'
 
