@@ -74,15 +74,15 @@ module Fluent
 
       @emit_counter = 0
 
-      fail 'region is required' if @region.empty?
-      if @access_key_id.empty? && @secret_access_key.empty?
+      fail 'region is required' if @region.nil?
+      if @access_key_id.nil? && @secret_access_key.nil?
         fail 'set "access_key_id" and "secret_access_key", or set "iam role" in this instance' unless _iam_role?
       else
-        fail 'access_key_id is required' if @access_key_id.empty?
-        fail 'secret_access_key is required' if @secret_access_key.empty?
+        fail 'access_key_id is required' if @access_key_id.nil?
+        fail 'secret_access_key is required' if @secret_access_key.nil?
       end
-      fail 's3_bucket is required' if @s3_bucket.empty?
-      fail 's3_prefix is required' if @s3_prefix.empty?
+      fail 's3_bucket is required' if @s3_bucket.nil?
+      fail 's3_prefix is required' if @s3_prefix.nil?
 
       @date_conditions = []
       (1..DATE_CONDITION_MAX_NUM).each do |index|
@@ -97,23 +97,23 @@ module Fluent
       end
 
       @s3_prefix = _add_end_slash(@s3_prefix)
-      fail 'Requires "s3_key_format" if input "s3_key_date_condition" values' if @date_conditions.size > 0 && @s3_key_format.empty?
-      @s3_key_format_regexp = _regexp_format(format: @s3_key_format, deny_no_name: @date_conditions.size > 0) unless @s3_key_format.empty?
-      @s3_key_exclude_format_regexp = _regexp_format(format: @s3_key_exclude_format) unless @s3_key_exclude_format.empty?
-      @s3_key_current_format_regexp = _regexp_format(format: @s3_key_current_format) unless @s3_key_current_format.empty?
+      fail 'Requires "s3_key_format" if input "s3_key_date_condition" values' if @date_conditions.size > 0 && @s3_key_format.nil?
+      @s3_key_format_regexp = _regexp_format(format: @s3_key_format, deny_no_name: @date_conditions.size > 0) unless @s3_key_format.nil?
+      @s3_key_exclude_format_regexp = _regexp_format(format: @s3_key_exclude_format) unless @s3_key_exclude_format.nil?
+      @s3_key_current_format_regexp = _regexp_format(format: @s3_key_current_format) unless @s3_key_current_format.nil?
 
-      fail 'format is required' if @format.empty?
+      fail 'format is required' if @format.nil?
       @format_regexp = _regexp_format(format: @format, deny_no_name: true)
-      @format_firstline_regexp = _regexp_format(format: @format_firstline) unless @format_firstline.empty?
+      @format_firstline_regexp = _regexp_format(format: @format_firstline) unless @format_firstline.nil?
 
       fail 'download_thread_num is required (over 1)' if @download_thread_num <= 0
       fail 'parse_thread_num is required (over 1)' if @parse_thread_num <= 0
 
-      fail 'timezone is required' if @timezone.empty?
+      fail 'timezone is required' if @timezone.nil?
 
-      _validate_timestamp unless @timestamp.empty?
+      _validate_timestamp unless @timestamp.nil?
 
-      fail 'work_dir is required' if @work_dir.empty?
+      fail 'work_dir is required' if @work_dir.nil?
       @work_dir = _add_end_slash(@work_dir)
       _make_work_dir
 
@@ -132,7 +132,7 @@ module Fluent
     end
 
     def _strptime_with_timezone(date, format = nil)
-      utc_offset = @timezone.empty? ? Time.now.utc_offset / 60 : TZInfo::Timezone.get(@timezone).current_period.utc_offset / 60
+      utc_offset = @timezone.nil? ? Time.now.utc_offset / 60 : TZInfo::Timezone.get(@timezone).current_period.utc_offset / 60
       offset_ope = (utc_offset >= 0) ? '+' : '-'
       utc_offset = utc_offset.abs
       offset_hour = (utc_offset / 60).to_i
@@ -504,7 +504,7 @@ module Fluent
         line_match.names.each do |name|
           emit_record[name] = line_match[name.to_sym]
 
-          if !@timestamp.empty? && name == @timestamp[:group_name] && !emit_record[name].nil?
+          if !@timestamp.nil? && name == @timestamp[:group_name] && !emit_record[name].nil?
             begin
               log_time = _strptime_with_timezone(emit_record[name], @timestamp[:format])
             rescue => e
@@ -536,7 +536,6 @@ module Fluent
             )
             current_record = nil
           end
-          @timestamp.empty?
           @router.emit(@tag, log_time, emit_record)
           db.where(id: obj[:id]).limit(1).update(obj)
           @emit_counter += 1
