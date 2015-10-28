@@ -386,7 +386,7 @@ module Fluent
             # TODO REMOVE
             #position: 0
           }
-        ) unless obj.storage_class != 'GLACIER'
+        ) if obj.storage_class != 'GLACIER'
       end
       _s3_objects(
         prefix: prefix, objects: objects, next_marker: resp.next_marker, timestamp: timestamp
