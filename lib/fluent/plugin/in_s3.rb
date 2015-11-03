@@ -6,6 +6,9 @@ require 'singleton'
 require 'sqlite3'
 require 'tzinfo'
 require 'zlib'
+require 'net/http'
+require 'uri'
+
 # Fluent
 module Fluent
   # S3Input
@@ -35,7 +38,7 @@ module Fluent
     config_param :format_firstline, :string, default: nil
     config_param :tag, :string, default: 's3in.log'
     config_param :timestamp, :string, default: nil
-    config_param :timezone, :string, default: nil
+    config_param :timezone, :string, default: 'UTC'
     # Workspace Config
     config_param :work_dir, :string, default: nil
     config_param :clear_db_at_start, :bool, default: false
@@ -74,6 +77,7 @@ module Fluent
 
       @emit_counter = 0
 
+      @region = _region
       fail 'region is required' if @region.nil?
       if @access_key_id.nil? && @secret_access_key.nil?
         fail 'set "access_key_id" and "secret_access_key", or set "iam role" in this instance' unless _iam_role?
@@ -120,6 +124,17 @@ module Fluent
       true
     rescue => e
       raise Fluent::ConfigError, "error occurred: #{e.message}, #{e.backtrace.join("\n")}"
+    end
+
+    def _region
+      return @region unless @region.nil?
+      uri = URI.parse('http://169.254.169.254/latest/meta-data/placement/availability-zone')
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.open_timeout = 5
+      http.read_timeout = 10
+      http.get(uri.path).chop
+    rescue
+      nil
     end
 
     def _validate_timestamp

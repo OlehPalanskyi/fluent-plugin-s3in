@@ -58,7 +58,7 @@ class S3InputTest < Test::Unit::TestCase
   end
 
   def parse_config(conf = {})
-    ''.tap { |s| conf.each { |k, v| s << "#{k} #{v}\n" } }
+    ''.tap { |s| conf.each { |k, v| s << "#{k} #{v.to_s}\n" unless v.nil? } }
   end
 
   def create_driver(conf = DEFAULT_CONFIG)
