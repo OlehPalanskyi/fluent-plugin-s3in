@@ -1,12 +1,19 @@
 require_relative 'spec_helper'
-
-require 'tmpdir'
-require 'glint'
-require 'pp'
+require_relative 'fakes3_server'
 
 WORK_DIR = File.expand_path('../../temp', __FILE__)
 
 describe Fluent::S3Input do
+  before(:all) do
+    Fluent::Test.setup
+    FakeS3Server.instance.start
+  end
+
+  after(:all) do
+    FileUtils.rm_r WORK_DIR if Dir.exist? WORK_DIR
+    FakeS3Server.instance.shutdown
+  end
+
   let(:region) { 'ap-northeast-1' }
   let(:default_conf) do
     %[
@@ -17,16 +24,9 @@ describe Fluent::S3Input do
     ]
   end
   let(:test_driver) { Fluent::Test::InputTestDriver.new(Fluent::S3Input) }
-
-  before(:all) do
-    Fluent::Test.setup
-
+  let(:remake_work_dir) do
     FileUtils.rm_r WORK_DIR if Dir.exist? WORK_DIR
     FileUtils.mkdir_p WORK_DIR
-  end
-
-  after(:all) do
-    FileUtils.rm_r WORK_DIR
   end
 
   def create_driver(conf)
@@ -37,6 +37,24 @@ describe Fluent::S3Input do
     ''.tap { |s| hash.each { |k, v| s << "#{k} #{v.to_s}\n" unless v.nil? } }
   end
 
+  describe '#start' do
+    let(:s3_client) do
+      Aws::S3::Client.new(
+        region: region,
+        access_key_id: 'DUMMY_ACCESS_KEY_ID',
+        secret_access_key: 'DUMMY_SECRET_ACCESS_KEY',
+        endpoint: FakeS3Server.instance.endpoint,
+        force_path_style: true)
+    end
+
+    context '圧縮形式ファイル' do
+    end
+    context 'Text形式ファイル' do
+      it '1 file, 100 records' do
+        
+      end
+    end
+  end
   describe '#configure' do
     let(:enable_iam_role) do
       dummy_cred = (Class.new { define_method(:credentials) { false } }).new

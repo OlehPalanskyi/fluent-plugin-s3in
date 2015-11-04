@@ -40,7 +40,7 @@ module Fluent
     config_param :timestamp, :string, default: nil
     config_param :timezone, :string, default: 'UTC'
     # Workspace Config
-    config_param :work_dir, :string, default: nil
+    config_param :work_dir, :string, default: '/var/s3in'
     config_param :clear_db_at_start, :bool, default: false
     # S3 Describe Interval
     config_param :refresh_interval, :integer, default: 300
@@ -117,7 +117,7 @@ module Fluent
 
       _validate_timestamp unless @timestamp.nil?
 
-      fail 'work_dir is required' if @work_dir.nil?
+      fail 'work_dir is required' if @work_dir.nil? || @work_dir.empty?
       @work_dir = _add_end_slash(@work_dir)
       _make_work_dir
 
@@ -172,7 +172,7 @@ module Fluent
         fail 'work_dir is not writable' unless FileTest.writable?(@work_dir)
       else
         begin
-          FileUtils.mkdir_p
+          FileUtils.mkdir_p @work_dir
         rescue
           raise 'coud not make work_dir'
         end
