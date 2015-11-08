@@ -52,7 +52,7 @@ module Fluent
     config_param :parse_thread_num, :integer, default: 5
 
     attr_reader :status
-    attr_reader :emit_counter
+    attr_accessor :start_queue
 
     module Status
       READY = 1
@@ -74,8 +74,6 @@ module Fluent
 
     def configure(conf)
       super
-
-      @emit_counter = 0
 
       @region = _region
       fail 'region is required' if @region.nil?
@@ -259,8 +257,8 @@ module Fluent
       @timer = Thread.new(&method(:_timer))
       @thread = Thread.start do
         while @start_queue.pop
-          break if @shutdown_flag
           @status = Status::RUNNING
+          break if @shutdown_flag
           run
           @status = Status::WAITING
         end
@@ -303,7 +301,6 @@ module Fluent
       return if obj_list.size <= 0
       obj_list.each { |obj| @download_queue.push obj }
       threads = []
-      parse_finish_queue = Queue.new
       dl_finish_queue = Queue.new
       @download_thread_num.times do
         threads << Thread.new do
@@ -388,7 +385,7 @@ module Fluent
             end
           end
           break if skip_flag
-        end
+        end unless key_match.nil?
         next if skip_flag
 
         objects << @db.default_schema.merge(
@@ -410,6 +407,8 @@ module Fluent
         _s3_objects(prefix: cmn_prefix.prefix, objects: objects, timestamp: timestamp)
       end if next_marker.nil?
       objects
+    rescue => e
+      $log.error "error occurred: #{e.message}, #{e.backtrace.join("\n")}"
     end
 
     def _current_target?(key)
@@ -553,7 +552,6 @@ module Fluent
           end
           @router.emit(@tag, log_time, emit_record)
           db.where(id: obj[:id]).limit(1).update(obj)
-          @emit_counter += 1
         end
 
         break if @shutdown_flag
@@ -647,6 +645,7 @@ module Fluent
             obj[:id] = db.insert(obj)
           else
             return nil if Time.iso8601(obj[:modified]) == Time.iso8601(record[:modified])
+            # return nil if Time.iso8601(obj[:modified]) == Time.iso8601(record[:modified]) && obj[:size] == record[:size]
             obj[:id] = record[:id]
             obj[:position] = record[:position]
             obj[:first_line] = record[:first_line]
