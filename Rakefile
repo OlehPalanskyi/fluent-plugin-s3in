@@ -1,7 +1,5 @@
 require 'bundler/gem_tasks'
 
-task :default => :test
-
 task :test do
   require 'rspec/core'
   require 'rspec/core/rake_task'
@@ -9,3 +7,5 @@ task :test do
     spec.pattern = FileList['spec/**/*_spec.rb']
   end
 end
+
+task :default => :test
